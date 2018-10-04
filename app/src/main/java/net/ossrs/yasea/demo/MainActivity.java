@@ -1,11 +1,15 @@
 package net.ossrs.yasea.demo;
 
+import android.Manifest;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -29,9 +33,10 @@ import java.net.SocketException;
 import java.util.Random;
 
 public class MainActivity extends AppCompatActivity implements RtmpHandler.RtmpListener,
-                        SrsRecordHandler.SrsRecordListener, SrsEncodeHandler.SrsEncodeListener {
+        SrsRecordHandler.SrsRecordListener, SrsEncodeHandler.SrsEncodeListener {
 
     private static final String TAG = "Yasea";
+    private static final int REQUEST_CAM_READ_WRITE = 123;
 
     private Button btnPublish;
     private Button btnSwitchCamera;
@@ -67,14 +72,16 @@ public class MainActivity extends AppCompatActivity implements RtmpHandler.RtmpL
         btnRecord = (Button) findViewById(R.id.record);
         btnSwitchEncoder = (Button) findViewById(R.id.swEnc);
 
-        mPublisher = new SrsPublisher((SrsCameraView) findViewById(R.id.glsurfaceview_camera));
-        mPublisher.setEncodeHandler(new SrsEncodeHandler(this));
-        mPublisher.setRtmpHandler(new RtmpHandler(this));
-        mPublisher.setRecordHandler(new SrsRecordHandler(this));
-        mPublisher.setPreviewResolution(640, 360);
-        mPublisher.setOutputResolution(360, 640);
-        mPublisher.setVideoHDMode();
-        mPublisher.startCamera();
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED
+                && ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+                && ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.RECORD_AUDIO}, REQUEST_CAM_READ_WRITE);
+
+        }else{
+            createView();
+        }
 
         btnPublish.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -141,6 +148,30 @@ public class MainActivity extends AppCompatActivity implements RtmpHandler.RtmpL
                 }
             }
         });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permission[], int[] grantResults) {
+        switch(requestCode) {
+            case REQUEST_CAM_READ_WRITE :{
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    createView();
+                } else {
+                    //code for deny
+                }
+            }
+        }
+    }
+
+    public void createView(){
+        mPublisher = new SrsPublisher((SrsCameraView) findViewById(R.id.glsurfaceview_camera));
+        mPublisher.setEncodeHandler(new SrsEncodeHandler(this));
+        mPublisher.setRtmpHandler(new RtmpHandler(this));
+        mPublisher.setRecordHandler(new SrsRecordHandler(this));
+        mPublisher.setPreviewResolution(640, 360);
+        mPublisher.setOutputResolution(360, 640);
+        mPublisher.setVideoHDMode();
+        mPublisher.startCamera();
     }
 
     @Override
