@@ -44,6 +44,7 @@ public class MainActivity extends AppCompatActivity implements RtmpHandler.RtmpL
     private Button btnSwitchEncoder;
 
     private SharedPreferences sp;
+    //rtmp://103.13.75.227:1935/live/test123
     private String rtmpUrl = "rtmp://ossrs.net/" + getRandomAlphaString(3) + '/' + getRandomAlphaDigitString(5);
     private String recPath = Environment.getExternalStorageDirectory().getPath() + "/test.mp4";
 
